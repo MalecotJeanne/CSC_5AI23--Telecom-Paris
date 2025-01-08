@@ -21,6 +21,8 @@ def train_model(model_name, train_set, config, device="cpu"):
     model = init_model(model_name, config['model']).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
+
     model.to(device)
     
     epoch_output = Output()
@@ -29,6 +31,9 @@ def train_model(model_name, train_set, config, device="cpu"):
     for epoch in range(config['n_epochs']):
         model.train()
         running_loss = 0.0
+
+        train_losses_dict = {"loss": [], "reconstruction_loss": [], "vq_loss": []}
+        val_losses_dict = {"loss": [], "reconstruction_loss": [], "vq_loss": []}
 
         with epoch_output:
             for i, data in enumerate(tqdm(train_loader, 
@@ -41,11 +46,12 @@ def train_model(model_name, train_set, config, device="cpu"):
                 
                 reconstructed_x, vq_loss,_ = model(x)
                 
-                loss = vqvae_loss(reconstructed_x, x, vq_loss)
+                loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss, config['alpha'])
                 loss.backward()
                 optimizer.step()
                 
                 
+
                 running_loss += loss.item()
 
             avg_loss = running_loss / len(train_loader)
@@ -60,7 +66,7 @@ def train_model(model_name, train_set, config, device="cpu"):
                     
                     reconstructed_x, vq_loss,_ = model(x)
 
-                    loss = vqvae_loss(reconstructed_x, x, vq_loss)
+                    loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss)
                     val_loss += loss.item()
 
             avg_val_loss = val_loss / len(val_loader)

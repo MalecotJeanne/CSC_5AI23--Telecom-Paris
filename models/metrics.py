@@ -11,11 +11,11 @@ def vae_loss(reconstructed_x, x, mu, logvar):
 
     return BCE + KL_divergence
 
-def vqvae_loss(reconstructed_x, x, vq_loss):
+def vqvae_loss(reconstructed_x, x, vq_loss, alpha=0.25):
 
-    reconstruction_loss = 0.5 * F.mse_loss(reconstructed_x, x) + 0.5 * (1 - SSIM(reconstructed_x, x))
+    reconstruction_loss =  alpha * F.mse_loss(reconstructed_x, x) + (1-alpha) * (1 - SSIM(reconstructed_x, x))
     
-    return reconstruction_loss + vq_loss
+    return reconstruction_loss + vq_loss, reconstruction_loss, vq_loss
 
 
 def SSIM(reconstructed_x, x, k1=0.01, k2=0.03, L=255):

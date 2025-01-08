@@ -4,10 +4,7 @@
 # # VQVAE for Image Generation - FashionMNIST Dataset
 # **Author:** Jeanne Malécot
 
-# ## Getting Started
-
-# In[1]:
-
+### Getting Started
 
 # useful imports
 import os
@@ -68,11 +65,15 @@ print(torchinfo.summary(vqvae, (1, 1, 28, 28), device=str(device)))
 # grid search
 
 model_dicts = []
-lr_list = [0.03, 0.01, 0.001]
-batch_size_list = [50, 100, 200]
-channels = [[16, 32], [32, 64], [64, 128], [128, 256]]
+# lr_list = [0.03, 0.01, 0.001]
+lr_list = [0.001]
+# batch_size_list = [50, 100, 200]
+batch_size_list = [100]
+channels = [[64, 128]]
+# latent_dim = [k for k in range(10, 101, 10)]
 latent_dim = [k for k in range(10, 101, 10)]
-n_embedding_list = [k for k in range(10, 501, 10)]
+# n_embedding_list = [k for k in range(10, 501, 10)]
+n_embedding_list = [k for k in range(10, 101, 10)]
 
 grid = [
     (lr, batch_size, channel, latent, n_embedding)
@@ -84,6 +85,8 @@ grid = [
 ]
 
 for i, (lr, batch_size, channel, latent, n_embedding) in enumerate(grid):
+
+    print(f"##########\nTraining model {i+1}/{len(grid)}\n")
     config = copy.deepcopy(basic_config)
     config["lr"] = lr
     config["model"]["batch_size"] = batch_size
@@ -102,17 +105,17 @@ for i, (lr, batch_size, channel, latent, n_embedding) in enumerate(grid):
 sorted_dicts = sorted(model_dicts, key=lambda x: x["val_loss"])
 
 print("\n\n############################################\n\n")
-print("Best 5 models:\n")
-print(sorted_dicts[:5])
+print("Best model:\n")
+print(sorted_dicts[:4])
 print("\n\n############################################\n\n")
 
 best_config = sorted_dicts[0]["config"]
 best_model = sorted_dicts[0]["model"]
 
 # save 5 firsts models
-for i in range(5):
+for i in range(4):
     torch.save(sorted_dicts[i]["model"].state_dict(), f"{results_dir}/model_{i}.pth")
 # save 5 firsts configs
-for i in range(5):
+for i in range(4):
     with open(f"{results_dir}/config_{i}.txt", "w") as f:
         f.write(str(sorted_dicts[i]["config"]))

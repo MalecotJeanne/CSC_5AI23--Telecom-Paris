@@ -27,14 +27,17 @@ def reconstruct(model, test_set, device='cuda'):
             x = x.cpu()
 
             label = label.item()
+            
 
             for indice in (latent_indices):
                 label_distribution[label, indice] += 1
             
             x_dicts.append({"original": x, "reconstructed": reconstructed_x, "label": label, "latent_indices": latent_indices.cpu().numpy()})
 
-    label_distribution = F.softmax(label_distribution/10000, dim=1)
-    
+
+    # label_distribution = F.softmax(label_distribution/10000, dim=1)
+    # label_distribution = label_distribution / label_distribution.sum(dim=1, keepdim=True)
+
     return x_dicts, label_distribution
 
 def show_recon(x_dicts):

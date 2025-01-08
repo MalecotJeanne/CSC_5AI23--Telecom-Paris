@@ -53,6 +53,12 @@ class VQVAE(nn.Module):
 
         self.r = len(self.channels) #reduction factor (nb of conv blocks)
 
+        if self.r > 2:
+            self.reshape = True
+            self.reshape_factor = 2**(self.r - 2)
+        else:
+            self.reshape = False            
+
         self.encoder = EncoderBlock(self.n_channels, self.channels + [self.latent_dim])
         self.vq = VectorQuantizer(self.n_embedding, self.latent_dim)
         
@@ -61,15 +67,24 @@ class VQVAE(nn.Module):
         self.final_conv = nn.Conv2d(self.n_channels, self.n_channels,  kernel_size = 1, padding = "same")
 
     def forward(self, x):
+        
+        if self.reshape:
+            x = F.interpolate(x, scale_factor = self.reshape_factor, mode='bilinear')
 
         x = self.encoder(x)
         x, vq_loss, latent_indices = self.vq(x)
         x = self.decoder(x)
 
         x = self.final_conv(x)
+        if self.reshape:
+            x = F.interpolate(x, scale_factor = 1/self.reshape_factor, mode='bilinear')
+
         return x, vq_loss, latent_indices
 
     def generate(self, p_dist, size=(28,28)):
+
+        if self.r > 2:
+            size = (size[0] * self.reshape_factor, size[1] * self.reshape_factor)            
 
         height, width = size
         latent_height = height // (2**self.r)
@@ -83,6 +98,9 @@ class VQVAE(nn.Module):
        
         generated_image = self.decoder(embeddings)
         generated_image = self.final_conv(generated_image)
+
+        if self.reshape:
+            generated_image = F.interpolate(generated_image, scale_factor = 1/self.reshape_factor, mode='bilinear')
         
         return generated_image[0][0]
 
