@@ -20,7 +20,7 @@ class VectorQuantizer(nn.Module):
         self.beta = beta
         
         self.embedding = nn.Embedding(self.K, self.embedding_dim).to(device)
-        self.embedding.weight.data.uniform_(-1/n_embedding, 1/n_embedding) #https://huggingface.co/blog/ariG23498/understand-vq
+        self.embedding.weight.data.uniform_(-1/self.K, 1/self.K) #https://huggingface.co/blog/ariG23498/understand-vq
 
     def forward(self, x):
 
@@ -50,6 +50,7 @@ class VQVAE(nn.Module):
         self.channels = config["channels"]
         self.latent_dim = config["latent_dim"]
         self.n_embedding = config["n_embedding"]
+        self.beta = config["beta"]
 
         self.r = len(self.channels) #reduction factor (nb of conv blocks)
 
@@ -60,7 +61,7 @@ class VQVAE(nn.Module):
             self.reshape = False            
 
         self.encoder = EncoderBlock(self.n_channels, self.channels + [self.latent_dim])
-        self.vq = VectorQuantizer(self.n_embedding, self.latent_dim)
+        self.vq = VectorQuantizer(self.n_embedding, self.latent_dim, self.beta )
         
         self.decoder = DecoderBlock(self.n_channels, self.channels + [self.latent_dim])
         
