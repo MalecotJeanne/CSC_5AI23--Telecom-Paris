@@ -11,6 +11,9 @@ sys.path.append(root_folder_path)
 from models.blocks import EncoderBlock, DecoderBlock
 
 class VectorQuantizer(nn.Module):
+    """
+    get help from #https://huggingface.co/blog/ariG23498/understand-vq
+    """
     def __init__(self, n_embedding, embedding_dim, beta = 0.5, device ='cpu'):
         super(VectorQuantizer, self).__init__()
 
@@ -27,8 +30,14 @@ class VectorQuantizer(nn.Module):
         _ , _ , height, weight = x.shape
         x_e = einops.rearrange(x, "b d h w -> (b h w) d")
 
-        distances = ((self.embedding.weight[:, None, :] - x_e[None, :, :]) ** 2).sum(dim = -1)
-        latent_indices =  torch.argmin(distances, dim = 0)
+        # distances = ((self.embedding.weight[:, None, :] - x_e[None, :, :]) ** 2).sum(dim = -1)
+        distances = (
+            torch.sum(x_e ** 2, dim=-1, keepdim=True)                 # a²
+            + torch.sum(self.embedding.weight.t() ** 2, dim=0, keepdim=True)  # b²
+            - 2 * torch.matmul(x_e, self.embedding.weight.t())        # -2ab
+        )
+
+        latent_indices =  torch.argmin(distances, dim = -1)
 
         x_q = self.embedding.weight[latent_indices] #representation of x in the embedding space
         x_q = einops.rearrange(x_q, "(b h w) d -> b d h w", h = height, w = weight)

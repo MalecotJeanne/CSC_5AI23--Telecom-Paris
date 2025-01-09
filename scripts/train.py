@@ -4,10 +4,11 @@ import torch.optim as optim
 from torch.utils.data import random_split
 import copy
 
+import torch.nn.functional as F
+
 from IPython.display import clear_output, display
 from ipywidgets import Output
 
-from models.metrics import vqvae_loss
 from models import init_model
 
 
@@ -22,7 +23,6 @@ def train_model(model_name, train_set, config, device="cpu"):
     
     epoch_output = Output()
     display(epoch_output)
-
     
     losses_dict = {"loss": [], "reconstruction_loss": [], "vq_loss": []}
 
@@ -43,7 +43,7 @@ def train_model(model_name, train_set, config, device="cpu"):
                 
                 reconstructed_x, vq_loss,_ = model(x)
                 
-                loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss, config['alpha'], config['gamma'])
+                loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss, config['gamma'])
                 loss.backward()
                 optimizer.step()     
 
@@ -70,3 +70,9 @@ def train_model(model_name, train_set, config, device="cpu"):
     del model
 
     return model_dict, losses_dict
+
+
+def vqvae_loss(reconstructed_x, x, vq_loss, gamma=0.5):
+    reconstruction_loss = F.mse_loss(reconstructed_x, x) 
+
+    return 2 * (gamma * reconstruction_loss + (1 - gamma) * vq_loss), reconstruction_loss, vq_loss  # return total loss, reconstruction loss and vq loss, to plot at the end
