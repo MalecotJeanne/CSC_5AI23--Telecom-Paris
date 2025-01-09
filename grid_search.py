@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 # # VQVAE for Image Generation - FashionMNIST Dataset
 # **Author:** Jeanne Malécot
-
-### Getting Started
 
 # useful imports
 import os
@@ -13,13 +10,8 @@ import copy
 import torch
 import torchvision
 import torchvision.transforms as transforms
-import torchinfo
-import random
-
-import matplotlib.pyplot as plt
 
 from scripts.train import train_model
-from scripts.reconstruct import reconstruct, show_recon
 from models.vqvae import VQVAE
 
 
@@ -28,8 +20,6 @@ results_dir = "Results"
 if not os.path.exists(results_dir):
     os.makedirs(results_dir)
 
-# ##### Load FashionMNIST dataset
-
 # load FashionMNIST
 train_set = torchvision.datasets.FashionMNIST(
     root="data", train=True, download=True, transform=transforms.ToTensor()
@@ -37,8 +27,6 @@ train_set = torchvision.datasets.FashionMNIST(
 test_set = torchvision.datasets.FashionMNIST(
     root="data", train=False, download=True, transform=transforms.ToTensor()
 )
-
-### Training VQVAE for reconstruction
 
 # device
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -56,23 +44,13 @@ basic_config = {
     },
 }
 
-# Model architecture:
-
 vqvae = vqvae = VQVAE(basic_config["model"]).to(device)
-print(torchinfo.summary(vqvae, (1, 1, 28, 28), device=str(device)))
-
-# #### Fine tuning of the VQ-VAE
-# grid search
 
 model_dicts = []
-# lr_list = [0.03, 0.01, 0.001]
 lr_list = [0.001]
-# batch_size_list = [50, 100, 200]
 batch_size_list = [100]
 channels = [[64, 128]]
-# latent_dim = [k for k in range(10, 101, 10)]
 latent_dim = [k for k in range(10, 101, 10)]
-# n_embedding_list = [k for k in range(10, 501, 10)]
 n_embedding_list = [k for k in range(10, 101, 10)]
 
 grid = [
@@ -95,13 +73,7 @@ for i, (lr, batch_size, channel, latent, n_embedding) in enumerate(grid):
     config["model"]["n_embedding"] = n_embedding
     model_dicts.append(train_model("vqvae", train_set, config, device))
 
-# for i, n_embeddings in enumerate(n_embedding_list):
-#     config = copy.deepcopy(basic_config)
-#     config['model']['n_embedding'] = n_embeddings
-#     model_dicts.append(train_model("vqvae", train_set, config, device))
-
-
-# select model with lower accuracy
+# select model with lower loss 
 sorted_dicts = sorted(model_dicts, key=lambda x: x["val_loss"])
 
 print("\n\n############################################\n\n")
@@ -115,7 +87,8 @@ best_model = sorted_dicts[0]["model"]
 # save 5 firsts models
 for i in range(4):
     torch.save(sorted_dicts[i]["model"].state_dict(), f"{results_dir}/model_{i}.pth")
-# save 5 firsts configs
+
+# save 5 bests configs
 for i in range(4):
     with open(f"{results_dir}/config_{i}.txt", "w") as f:
         f.write(str(sorted_dicts[i]["config"]))

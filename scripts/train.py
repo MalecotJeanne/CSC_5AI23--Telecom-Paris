@@ -19,7 +19,7 @@ def train_model(model_name, train_set, config, device="cpu"):
 
     optimizer = optim.Adam(model.parameters(), lr=config['lr'])
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.5)
-
+    
     epoch_output = Output()
     display(epoch_output)
 
@@ -43,7 +43,7 @@ def train_model(model_name, train_set, config, device="cpu"):
                 
                 reconstructed_x, vq_loss,_ = model(x)
                 
-                loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss, config['alpha'])
+                loss, reconstruction_loss, vq_loss = vqvae_loss(reconstructed_x, x, vq_loss, config['alpha'], config['gamma'])
                 loss.backward()
                 optimizer.step()     
 

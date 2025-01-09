@@ -1,8 +1,6 @@
-from models.vae import VAE
 from models.vqvae import VQVAE
 
 models = {
-    "vae": VAE,
     "vqvae": VQVAE,
 }
 

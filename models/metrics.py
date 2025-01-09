@@ -1,25 +1,14 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 
-
-def vae_loss(reconstructed_x, x, mu, logvar):
-    
-    BCE = nn.functional.binary_cross_entropy_with_logits(reconstructed_x, x, reduction='sum')
-    KL_divergence = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
-    return BCE + KL_divergence
-
-def vqvae_loss(reconstructed_x, x, vq_loss, alpha=0.25):
-
+def vqvae_loss(reconstructed_x, x, vq_loss, alpha=0.25, gamma=0.5):
     reconstruction_loss =  alpha * F.mse_loss(reconstructed_x, x) + (1-alpha) * (1 - SSIM(reconstructed_x, x))
-    
-    return reconstruction_loss + vq_loss, reconstruction_loss, vq_loss
+
+    return 2*(gamma*reconstruction_loss + (1-gamma) * vq_loss), reconstruction_loss, vq_loss # return total loss, reconstruction loss and vq loss, to plot at the end
 
 
 def SSIM(reconstructed_x, x, k1=0.01, k2=0.03, L=255):
-
     mu_x = torch.mean(x)
     mu_y = torch.mean(reconstructed_x)
 
